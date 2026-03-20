@@ -1,0 +1,13 @@
+.area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-editor);
+  overflow: hidden;
+}
+
+.content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}

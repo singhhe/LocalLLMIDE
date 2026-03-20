@@ -1,0 +1,15 @@
+node_modules
+dist
+release
+out
+.DS_Store
+*.log
+
+# Debug test scripts
+test-*.cjs
+test-*.mjs
+test-*.js
+test_electron_require.cjs
+test_processtype.mjs
+test_esm_app/
+test_minimal/

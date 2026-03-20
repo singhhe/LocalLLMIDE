@@ -1,0 +1,76 @@
+@import './theme.css';
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-window);
+  color: var(--fg-primary);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-md);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Scrollbars ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--fg-muted); }
+
+/* ─── Selection ───────────────────────────────────────────────────────── */
+::selection { background: var(--accent); color: #fff; }
+
+/* ─── Inputs ──────────────────────────────────────────────────────────── */
+input, textarea, button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+/* ─── Drag region for frameless window ───────────────────────────────── */
+.drag-region { -webkit-app-region: drag; }
+.no-drag { -webkit-app-region: no-drag; }
+
+/* ─── Utility ─────────────────────────────────────────────────────────── */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: var(--fg-secondary);
+  transition: color 0.1s, background 0.1s;
+}
+.icon-btn:hover {
+  color: var(--fg-primary);
+  background: var(--bg-hover);
+}
+.icon-btn.active {
+  color: var(--fg-primary);
+}
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
