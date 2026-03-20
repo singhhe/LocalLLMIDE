@@ -17,6 +17,7 @@ interface EditorState {
 }
 
 let _nextId = 1
+const _autoSaveTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
 export const useEditorStore = create<EditorState>((set, get) => ({
   tabs: [],
@@ -57,6 +58,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((s) => ({
       tabs: s.tabs.map((t) => t.id === id ? { ...t, content, isDirty: true } : t)
     }))
+    // Auto-save after 1.5 s of inactivity
+    const existing = _autoSaveTimers.get(id)
+    if (existing) clearTimeout(existing)
+    _autoSaveTimers.set(id, setTimeout(() => {
+      _autoSaveTimers.delete(id)
+      get().saveTab(id)
+    }, 1500))
   },
 
   markDirty: (id: string, dirty: boolean) => {

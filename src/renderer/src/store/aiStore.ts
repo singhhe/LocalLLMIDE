@@ -14,6 +14,7 @@ interface AiState {
   setStop: (fn: (() => void) | null) => void
   stop: () => void
   clearMessages: () => void
+  loadHistory: () => Promise<void>
   setModelStatus: (loaded: boolean, name: string | null) => void
   sendMessage: (prompt: string, workspacePath?: string) => Promise<void>
 }
@@ -66,6 +67,12 @@ function extractFileBlocks(text: string): { filePath: string; code: string }[] {
 
 let _msgId = 1
 
+function saveChatHistory(messages: ChatMessage[]) {
+  // Only persist non-streaming messages
+  const toSave = messages.filter((m) => !m.isStreaming)
+  window.api.saveChatHistory(toSave).catch(() => { /* non-fatal */ })
+}
+
 export const useAiStore = create<AiState>((set, get) => ({
   messages: [],
   isStreaming: false,
@@ -98,13 +105,13 @@ export const useAiStore = create<AiState>((set, get) => ({
   },
 
   finalizeMessage: (id: string) => {
-    set((s) => ({
-      messages: s.messages.map((m) =>
+    set((s) => {
+      const messages = s.messages.map((m) =>
         m.id === id ? { ...m, isStreaming: false } : m
-      ),
-      isStreaming: false,
-      stopFn: null
-    }))
+      )
+      saveChatHistory(messages)
+      return { messages, isStreaming: false, stopFn: null }
+    })
   },
 
   setStop: (fn) => set({ stopFn: fn }),
@@ -117,7 +124,19 @@ export const useAiStore = create<AiState>((set, get) => ({
 
   clearMessages: () => {
     window.api.clearHistory().catch(() => { /* model may not be loaded */ })
+    window.api.saveChatHistory([]).catch(() => { /* non-fatal */ })
     set({ messages: [] })
+  },
+
+  loadHistory: async () => {
+    try {
+      const messages = await window.api.loadChatHistory()
+      if (messages.length > 0) {
+        const maxId = messages.reduce((m, msg) => Math.max(m, Number(msg.id)), 0)
+        _msgId = maxId + 1
+        set({ messages })
+      }
+    } catch { /* non-fatal */ }
   },
 
   setModelStatus: (loaded: boolean, name: string | null) =>

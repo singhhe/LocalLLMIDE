@@ -102,10 +102,58 @@
   cursor: not-allowed;
 }
 
+.attachedFiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-bottom: 2px;
+}
+
+.fileChip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(124, 92, 246, 0.12);
+  border: 1px solid rgba(124, 92, 246, 0.35);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: var(--font-size-xs);
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.fileChipRemove {
+  background: none;
+  border: none;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 1px;
+}
+.fileChipRemove:hover { color: var(--fg-primary); }
+
 .inputActions {
   display: flex;
   justify-content: flex-end;
+  gap: 6px;
 }
+
+.attachBtn {
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--fg-secondary);
+  border-radius: 5px;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  transition: color 0.15s, border-color 0.15s;
+}
+.attachBtn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.attachBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .sendBtn {
   padding: 5px 14px;

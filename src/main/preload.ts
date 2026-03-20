@@ -144,6 +144,10 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('settings:set', key, value),
   browseModelsDir: (): Promise<string | null> =>
     ipcRenderer.invoke('settings:browseModelsDir'),
+  saveChatHistory: (messages: ChatMessage[]): Promise<void> =>
+    ipcRenderer.invoke('chat:save', messages),
+  loadChatHistory: (): Promise<ChatMessage[]> =>
+    ipcRenderer.invoke('chat:load'),
 
   // ── Terminal ─────────────────────────────────────────────────────────
   termCreate: (id: string, cwd: string): Promise<{ cols: number; rows: number }> =>
