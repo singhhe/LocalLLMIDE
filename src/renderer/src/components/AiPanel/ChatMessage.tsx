@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useEditorStore } from '../../store/editorStore'
 import { useWorkspaceStore } from '../../store/workspaceStore'
 import type { ChatMessage as ChatMessageType } from '../../../../shared/types'
@@ -31,23 +31,56 @@ function parseCodeBlocks(text: string): CodeBlock[] {
   return blocks
 }
 
-function renderContent(text: string, onApply: (code: string) => void, onCreateFile: (filePath: string, code: string) => void) {
+function renderContent(
+  text: string,
+  onApply: (code: string) => void,
+  onCreateFile: (filePath: string, code: string) => void,
+  onDeleteFile: (filePath: string) => void,
+  deleteStatus: Record<string, 'pending' | 'ok' | 'err'>
+) {
   // Split into alternating text and code block segments
   const segments = text.split(/(```[\s\S]*?```)/g)
 
   return segments.map((seg, i) => {
     if (!seg.startsWith('```')) {
-      // Render text: split on inline code
-      const parts = seg.split(/(`[^`\n]+`)/g)
-      return (
-        <span key={i}>
-          {parts.map((p, j) =>
-            p.startsWith('`') && p.endsWith('`') && p.length > 2
-              ? <code key={j} className={styles.inlineCode}>{p.slice(1, -1)}</code>
-              : <span key={j} style={{ whiteSpace: 'pre-wrap' }}>{p}</span>
-          )}
-        </span>
-      )
+      // Render text: detect DELETE:filepath lines, then inline code, then plain text
+      const lines = seg.split('\n')
+      const parts: JSX.Element[] = []
+      lines.forEach((line, li) => {
+        const deleteMatch = line.match(/^DELETE:(.+)$/)
+        if (deleteMatch) {
+          const fp = deleteMatch[1].trim()
+          const status = deleteStatus[fp]
+          parts.push(
+            <div key={`del-${i}-${li}`} className={styles.deleteDirective}>
+              <span className={styles.deleteIcon}>🗑</span>
+              <span className={styles.deletePath}>{fp}</span>
+              {status === 'ok' ? (
+                <span className={styles.deleteOk}>✓ Deleted</span>
+              ) : status === 'err' ? (
+                <span className={styles.deleteErr}>✗ Failed</span>
+              ) : (
+                <button className={styles.deleteBtn} onClick={() => onDeleteFile(fp)}>
+                  Delete file
+                </button>
+              )}
+            </div>
+          )
+        } else {
+          const inlineParts = line.split(/(`[^`\n]+`)/g)
+          parts.push(
+            <span key={`txt-${i}-${li}`} style={{ whiteSpace: 'pre-wrap' }}>
+              {inlineParts.map((p, j) =>
+                p.startsWith('`') && p.endsWith('`') && p.length > 2
+                  ? <code key={j} className={styles.inlineCode}>{p.slice(1, -1)}</code>
+                  : <span key={j}>{p}</span>
+              )}
+              {li < lines.length - 1 ? '\n' : ''}
+            </span>
+          )
+        }
+      })
+      return <span key={i}>{parts}</span>
     }
 
     // Code block
@@ -94,6 +127,7 @@ export function ChatMessage({ message }: Props): JSX.Element {
   const { current: workspace, refreshTree } = useWorkspaceStore()
   const [copied, setCopied] = useState(false)
   const [createStatus, setCreateStatus] = useState<Record<string, 'ok' | 'err'>>({})
+  const [deleteStatus, setDeleteStatus] = useState<Record<string, 'pending' | 'ok' | 'err'>>({})
   const isUser = message.role === 'user'
 
   const applyToEditor = (code: string) => {
@@ -119,6 +153,24 @@ export function ChatMessage({ message }: Props): JSX.Element {
     }
   }
 
+  const deleteFile = useCallback(async (filePath: string) => {
+    const base = workspace?.path
+    const winAbsolute = /^[a-zA-Z]:/.test(filePath)
+    const unixAbsolute = filePath.startsWith('/')
+    let fullPath: string
+    if (winAbsolute) fullPath = filePath
+    else if (unixAbsolute) fullPath = base ? `${base}/${filePath.replace(/^\//, '')}` : filePath
+    else fullPath = base ? `${base}/${filePath}` : filePath
+    setDeleteStatus((s) => ({ ...s, [filePath]: 'pending' }))
+    try {
+      await window.api.deleteFile(fullPath)
+      setDeleteStatus((s) => ({ ...s, [filePath]: 'ok' }))
+      await refreshTree()
+    } catch {
+      setDeleteStatus((s) => ({ ...s, [filePath]: 'err' }))
+    }
+  }, [workspace, refreshTree])
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(message.content)
     setCopied(true)
@@ -129,7 +181,7 @@ export function ChatMessage({ message }: Props): JSX.Element {
     <div className={`${styles.msg} ${isUser ? styles.user : styles.assistant}`}>
       <div className={styles.role}>{isUser ? 'You' : 'AI'}</div>
       <div className={styles.content}>
-        {renderContent(message.content, applyToEditor, createFile)}
+        {renderContent(message.content, applyToEditor, createFile, deleteFile, deleteStatus)}
         {message.isStreaming && <span className={styles.cursor}>▋</span>}
       </div>
       {!isUser && !message.isStreaming && (

@@ -44,23 +44,27 @@ class LlmService {
       threads: opts.threads,
     })
 
-    const systemPrompt = opts.systemPrompt ?? `You are an AI coding assistant inside a local IDE with full filesystem access. You CAN and DO create files directly.
+    const systemPrompt = opts.systemPrompt ?? `You are an AI coding assistant inside a local IDE with full filesystem access. You CAN and DO create, modify, and delete files directly.
 
-CRITICAL: You MUST output file contents in this format so the IDE writes them to disk automatically:
-
+CRITICAL — To create or modify a file, use this format:
 \`\`\`language:path/to/file.ext
 file contents here
 \`\`\`
 
+CRITICAL — To delete a file, output a line in this exact format (one per file):
+DELETE:path/to/file.ext
+
 RULES:
 - ALWAYS use the language:filepath format on the opening fence. Example: \`\`\`typescript:src/index.ts
-- NEVER say "I cannot create files" or "I don't have filesystem access" — this is false. The IDE handles it.
-- NEVER tell the user to run shell commands to create files.
+- ALWAYS use DELETE:filepath (no spaces, no backticks) to signal a file should be deleted.
+- NEVER say "I cannot create files", "I cannot delete files", or "I don't have filesystem access" — this is false. The IDE handles it.
+- NEVER tell the user to run shell commands to create or delete files.
 - NEVER say "copy and paste this into your terminal".
 - Output ALL files needed. The IDE creates parent directories automatically.
 - Use relative paths. Example: src/utils/helper.ts not /absolute/path.
 
-When asked to create a project or files, immediately output all file contents using the format above.`
+When asked to create a project or files, immediately output all file contents using the format above.
+When asked to delete files, output DELETE:filepath lines for each file to remove.`
 
     // Persistent session — reused across all chat messages
     this.session = new LlamaChatSession({

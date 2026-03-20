@@ -158,3 +158,51 @@
   color: var(--fg-primary);
   background: var(--bg-selected);
 }
+
+.deleteDirective {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  margin: 4px 0;
+  background: rgba(244, 67, 54, 0.08);
+  border: 1px solid rgba(244, 67, 54, 0.25);
+  border-radius: 4px;
+}
+
+.deleteIcon {
+  font-size: 13px;
+}
+
+.deletePath {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: #f44336;
+  flex: 1;
+}
+
+.deleteBtn {
+  font-size: var(--font-size-xs);
+  padding: 1px 8px;
+  border: 1px solid #f44336;
+  border-radius: 3px;
+  background: transparent;
+  color: #f44336;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.deleteBtn:hover {
+  background: #f44336;
+  color: #fff;
+}
+
+.deleteOk {
+  font-size: var(--font-size-xs);
+  color: #4caf50;
+}
+
+.deleteErr {
+  font-size: var(--font-size-xs);
+  color: #f44336;
+}
