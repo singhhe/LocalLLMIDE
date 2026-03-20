@@ -4,6 +4,7 @@ release
 out
 .DS_Store
 *.log
+CLAUDE.md
 
 # Debug test scripts
 test-*.cjs
