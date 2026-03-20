@@ -3,6 +3,7 @@ import { useEditorStore } from '../../store/editorStore'
 import { useWorkspaceStore } from '../../store/workspaceStore'
 import type { ChatMessage as ChatMessageType } from '../../../../shared/types'
 import styles from './ChatMessage.module.css'
+import { DiffCodeBlock } from './DiffCodeBlock'
 
 interface Props {
   message: ChatMessageType
@@ -36,7 +37,9 @@ function renderContent(
   onApply: (code: string) => void,
   onCreateFile: (filePath: string, code: string) => void,
   onDeleteFile: (filePath: string) => void,
-  deleteStatus: Record<string, 'pending' | 'ok' | 'err'>
+  deleteStatus: Record<string, 'pending' | 'ok' | 'err'>,
+  workspacePath: string | undefined,
+  createStatus: Record<string, 'ok' | 'err'>
 ) {
   // Split into alternating text and code block segments
   const segments = text.split(/(```[\s\S]*?```)/g)
@@ -98,23 +101,29 @@ function renderContent(
       if (m) filePath = m[1].trim()
     }
 
+    // File-targeted block → show diff view
+    if (filePath) {
+      return (
+        <DiffCodeBlock
+          key={i}
+          filePath={filePath}
+          lang={lang}
+          newCode={code}
+          workspacePath={workspacePath}
+          onSave={onCreateFile}
+          saveStatus={createStatus[filePath]}
+        />
+      )
+    }
+
+    // Plain code block (no file path) → simple view with Apply button
     return (
       <div key={i} className={styles.codeBlock}>
         <div className={styles.codeHeader}>
-          {filePath
-            ? <span className={styles.codePath}>{filePath}</span>
-            : lang && <span className={styles.codeLang}>{lang}</span>
-          }
-          <div className={styles.codeActions}>
-            {filePath && (
-              <button className={styles.createBtn} onClick={() => onCreateFile(filePath!, code)}>
-                + Create file
-              </button>
-            )}
-            <button className={styles.applyBtn} onClick={() => onApply(code)}>
-              ⬆ Apply
-            </button>
-          </div>
+          {lang && <span className={styles.codeLang}>{lang}</span>}
+          <button className={styles.applyBtn} onClick={() => onApply(code)}>
+            ⬆ Apply
+          </button>
         </div>
         <pre className={styles.code}><code>{code}</code></pre>
       </div>
@@ -181,7 +190,7 @@ export function ChatMessage({ message }: Props): JSX.Element {
     <div className={`${styles.msg} ${isUser ? styles.user : styles.assistant}`}>
       <div className={styles.role}>{isUser ? 'You' : 'AI'}</div>
       <div className={styles.content}>
-        {renderContent(message.content, applyToEditor, createFile, deleteFile, deleteStatus)}
+        {renderContent(message.content, applyToEditor, createFile, deleteFile, deleteStatus, workspace?.path, createStatus)}
         {message.isStreaming && <span className={styles.cursor}>▋</span>}
       </div>
       {!isUser && !message.isStreaming && (
@@ -191,11 +200,6 @@ export function ChatMessage({ message }: Props): JSX.Element {
           </button>
         </div>
       )}
-      {Object.entries(createStatus).map(([fp, status]) => (
-        <div key={fp} className={status === 'ok' ? styles.createOk : styles.createErr}>
-          {status === 'ok' ? `✓ Created ${fp}` : `✗ Failed to create ${fp}`}
-        </div>
-      ))}
     </div>
   )
 }
