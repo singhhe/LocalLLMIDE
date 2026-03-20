@@ -1,9 +1,12 @@
 import { useState, useCallback } from 'react'
 import { useEditorStore } from '../../store/editorStore'
 import { useWorkspaceStore } from '../../store/workspaceStore'
+import { useUiStore } from '../../store/uiStore'
 import type { ChatMessage as ChatMessageType } from '../../../../shared/types'
 import styles from './ChatMessage.module.css'
 import { DiffCodeBlock } from './DiffCodeBlock'
+
+const TERM_ID = 'main'
 
 interface Props {
   message: ChatMessageType
@@ -37,7 +40,9 @@ function renderContent(
   onApply: (code: string) => void,
   onCreateFile: (filePath: string, code: string) => void,
   onDeleteFile: (filePath: string) => void,
+  onRunCommand: (cmd: string) => void,
   deleteStatus: Record<string, 'pending' | 'ok' | 'err'>,
+  runStatus: Record<string, 'ran' | 'err'>,
   workspacePath: string | undefined,
   createStatus: Record<string, 'ok' | 'err'>
 ) {
@@ -51,6 +56,7 @@ function renderContent(
       const parts: JSX.Element[] = []
       lines.forEach((line, li) => {
         const deleteMatch = line.match(/^DELETE:(.+)$/)
+        const runMatch = line.match(/^RUN:(.+)$/)
         if (deleteMatch) {
           const fp = deleteMatch[1].trim()
           const status = deleteStatus[fp]
@@ -65,6 +71,22 @@ function renderContent(
               ) : (
                 <button className={styles.deleteBtn} onClick={() => onDeleteFile(fp)}>
                   Delete file
+                </button>
+              )}
+            </div>
+          )
+        } else if (runMatch) {
+          const cmd = runMatch[1].trim()
+          const status = runStatus[cmd]
+          parts.push(
+            <div key={`run-${i}-${li}`} className={styles.runDirective}>
+              <span className={styles.runIcon}>▶</span>
+              <code className={styles.runCmd}>{cmd}</code>
+              {status === 'ran' ? (
+                <span className={styles.runOk}>✓ Running</span>
+              ) : (
+                <button className={styles.runBtn} onClick={() => onRunCommand(cmd)}>
+                  Run
                 </button>
               )}
             </div>
@@ -134,9 +156,11 @@ function renderContent(
 export function ChatMessage({ message }: Props): JSX.Element {
   const { tabs, activeTabId, setTabContent } = useEditorStore()
   const { current: workspace, refreshTree } = useWorkspaceStore()
+  const { terminalVisible, toggleTerminal } = useUiStore()
   const [copied, setCopied] = useState(false)
   const [createStatus, setCreateStatus] = useState<Record<string, 'ok' | 'err'>>({})
   const [deleteStatus, setDeleteStatus] = useState<Record<string, 'pending' | 'ok' | 'err'>>({})
+  const [runStatus, setRunStatus] = useState<Record<string, 'ran' | 'err'>>({})
   const isUser = message.role === 'user'
 
   const applyToEditor = (code: string) => {
@@ -180,6 +204,12 @@ export function ChatMessage({ message }: Props): JSX.Element {
     }
   }, [workspace, refreshTree])
 
+  const runCommand = useCallback((cmd: string) => {
+    if (!terminalVisible) toggleTerminal()
+    window.api.termWrite(TERM_ID, cmd + '\r')
+    setRunStatus((s) => ({ ...s, [cmd]: 'ran' }))
+  }, [terminalVisible, toggleTerminal])
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(message.content)
     setCopied(true)
@@ -190,7 +220,7 @@ export function ChatMessage({ message }: Props): JSX.Element {
     <div className={`${styles.msg} ${isUser ? styles.user : styles.assistant}`}>
       <div className={styles.role}>{isUser ? 'You' : 'AI'}</div>
       <div className={styles.content}>
-        {renderContent(message.content, applyToEditor, createFile, deleteFile, deleteStatus, workspace?.path, createStatus)}
+        {renderContent(message.content, applyToEditor, createFile, deleteFile, runCommand, deleteStatus, runStatus, workspace?.path, createStatus)}
         {message.isStreaming && <span className={styles.cursor}>▋</span>}
       </div>
       {!isUser && !message.isStreaming && (

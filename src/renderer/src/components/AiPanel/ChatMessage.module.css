@@ -159,6 +159,50 @@
   background: var(--bg-selected);
 }
 
+.runDirective {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  margin: 4px 0;
+  background: rgba(61, 202, 125, 0.08);
+  border: 1px solid rgba(61, 202, 125, 0.25);
+  border-radius: 4px;
+}
+
+.runIcon {
+  font-size: 11px;
+  color: #3dca7d;
+}
+
+.runCmd {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--fg-primary);
+  flex: 1;
+}
+
+.runBtn {
+  font-size: var(--font-size-xs);
+  padding: 1px 10px;
+  border: 1px solid #3dca7d;
+  border-radius: 3px;
+  background: transparent;
+  color: #3dca7d;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.runBtn:hover {
+  background: #3dca7d;
+  color: #000;
+}
+
+.runOk {
+  font-size: var(--font-size-xs);
+  color: #3dca7d;
+}
+
 .deleteDirective {
   display: flex;
   align-items: center;

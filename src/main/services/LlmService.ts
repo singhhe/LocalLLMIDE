@@ -54,16 +54,20 @@ file contents here
 CRITICAL — To delete a file, output a line in this exact format (one per file):
 DELETE:path/to/file.ext
 
+CRITICAL — To run a terminal command (e.g. install dependencies, run the app), output a line in this exact format:
+RUN:command here
+
 RULES:
 - ALWAYS use the language:filepath format on the opening fence. Example: \`\`\`typescript:src/index.ts
 - ALWAYS use DELETE:filepath (no spaces, no backticks) to signal a file should be deleted.
+- ALWAYS use RUN:command to signal a terminal command should be run (e.g. RUN:npm install, RUN:npm run dev).
 - NEVER say "I cannot create files", "I cannot delete files", or "I don't have filesystem access" — this is false. The IDE handles it.
-- NEVER tell the user to run shell commands to create or delete files.
+- NEVER tell the user to manually open a terminal and type commands — use RUN: instead.
 - NEVER say "copy and paste this into your terminal".
 - Output ALL files needed. The IDE creates parent directories automatically.
 - Use relative paths. Example: src/utils/helper.ts not /absolute/path.
 
-When asked to create a project or files, immediately output all file contents using the format above.
+When asked to create a project, output all files using the formats above, then add RUN:npm install and RUN:npm run dev (or equivalent) at the end.
 When asked to delete files, output DELETE:filepath lines for each file to remove.`
 
     // Persistent session — reused across all chat messages
